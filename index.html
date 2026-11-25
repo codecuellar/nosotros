@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#6d0a18">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="Nuestro rincón: planes, pequeños rituales y recuerdos de a dos.">
 <title>Nuestro rincón</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23b01228' d='M16 29S1 20 1 11C1 1 12 0 16 8 20 0 31 1 31 11c0 9-15 18-15 18Z'/%3E%3C/svg%3E">
@@ -47,6 +51,7 @@ button,input,textarea,select{font:inherit}button,a,input,textarea,select{-webkit
 .upload{position:relative}.upload:focus-within{outline:3px solid var(--gold);outline-offset:4px}
 @page{size:A4;margin:0}
 @media print{html,body{height:auto!important;overflow:visible!important;background:white!important;margin:0!important;padding:0!important}body>*:not(#printArea){display:none!important}#printArea{display:block!important;width:210mm;height:297mm;margin:0;padding:0;overflow:hidden;break-inside:avoid;page-break-inside:avoid}#printArea img{display:block;width:210mm;height:296.9mm;object-fit:contain;margin:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+.sync-status{font-size:12px;text-align:center;padding:5px 14px;background:var(--panel);color:var(--cream);flex:none}.login-screen{position:fixed;inset:0;z-index:10;overflow:auto;display:grid;place-items:center;padding:24px;background:var(--bg)}.login-paper{width:min(100%,410px);margin:auto}.login-paper h2,.login-paper>p{text-align:center}.pending-photo{display:block;font-size:11px;color:#873b50;margin-top:7px}
 </style>
 </head>
 <body>
@@ -66,6 +71,7 @@ button,input,textarea,select{font:inherit}button,a,input,textarea,select{-webkit
 </defs></svg>
 <div id="app">
 <header class="top"><div class="brand"><svg aria-hidden="true"><use href="#i-heart"/></svg><div><h1>Nuestro rincón</h1><small id="couple"></small></div></div><button class="iconbtn" aria-label="Ajustes" onclick="go('settings')"><svg class="icon"><use href="#i-settings"/></svg></button></header>
+<div id="syncStatus" class="sync-status" role="status" aria-live="polite">Abriendo sus recuerdos…</div>
 <div id="storageWarning" role="alert" hidden></div>
 <main id="main"><div class="content">
 <section id="v-home" class="view on" aria-label="Inicio"></section>
@@ -111,7 +117,8 @@ let state=EMPTY(), images={}, db=null, storageOK=true, loading=true, view='home'
 let cropDraft=null, collageDrawToken=0;
 function toast(message){$('#toast').textContent=message;$('#toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').classList.remove('show'),3600);}
 function storageError(message){storageOK=false;const n=$('#storageWarning');n.hidden=false;n.textContent=message+' Exportá una copia antes de cerrar esta página.';}
-function commit(next, recovery=false){if(corruptState&&!recovery){toast('Los datos anteriores necesitan recuperarse. Entrá en Ajustes antes de guardar cambios.');return false;}try{localStorage.setItem(KEY,JSON.stringify(next));state=next;corruptState=false;preservedRaw=null;storageOK=true;$('#storageWarning').hidden=true;return true;}catch(e){storageError('No pudimos guardar los cambios: el almacenamiento está lleno o bloqueado.');toast('No se guardó el cambio. Revisá Ajustes.');return false;}}
+function commit(next){return Shared.commit(next);}
+
 function update(fn){const next=clone(state);fn(next);return commit(next);}
 function celebrate(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;for(let i=0;i<12;i++){const el=document.createElement('span');el.className='celebrate';el.textContent='♥';el.style.cssText=`--x:${(Math.random()-.5)*300}px;--y:${-90-Math.random()*180}px;--r:${Math.random()*90-45}deg;`;document.body.append(el);setTimeout(()=>el.remove(),1400);}}
 function modal(title,body){const d=$('#modal');$('#modalTitle').textContent=title;$('#modalBody').innerHTML=body;if(!d.open){modalReturn=document.activeElement;d.showModal();}d.scrollTop=0;const focusTarget=$('#modalBody [autofocus]');if(focusTarget)focusTarget.focus();}
@@ -221,10 +228,8 @@ for(const key of ['days','notes']){if(!s[key]||typeof s[key]!=='object'||Array.i
 const c=s.collage;if(!c||!Number.isInteger(c.template)||c.template<0||c.template>=TEMPLATES.length||!c.slots||typeof c.slots!=='object'||Array.isArray(c.slots))throw new Error('Collage inválido.');clean.collage={template:c.template,caption:text(c.caption,120),slots:{}};for(const [k,slots] of Object.entries(c.slots)){if(!/^[0-4]$/.test(k))throw new Error('Plantilla desconocida.');clean.collage.slots[k]=list(slots,TEMPLATES[Number(k)].slots.length).map(slot=>{if(!slot)return null;if(!clean.photos.some(p=>p.id===slot.photoId))throw new Error('Un collage apunta a una foto inexistente.');return {photoId:id(slot.photoId),x:num(slot.x,0,100),y:num(slot.y,0,100),zoom:num(slot.zoom,1,3)};});}
 if(!s.settings||!['auto','fiestas','romantico'].includes(s.settings.theme))throw new Error('Tema inválido.');clean.settings={theme:s.settings.theme};return {state:clean,images:importedImages};}
 $('#importFile').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;try{if(file.size>100*1024*1024)throw new Error('El respaldo supera 100 MB.');const candidate=validatePackage(JSON.parse(await file.text()));await Promise.all(Object.values(candidate.images).map(loadImage));modal('Recuperar sus recuerdos',`<p>El archivo tiene <b>${candidate.state.events.length} actividades, ${candidate.state.ideas.length} ideas y ${candidate.state.photos.length} fotos</b>.</p><div class="notice warn" style="margin-top:16px">Reemplazará los datos de este navegador. No combina cambios. Primero se descargará un respaldo de lo que tienen acá; verificá que el navegador permita guardarlo.</div><div class="form-actions"><button class="btn soft" onclick="closeModal()">Cancelar</button><button class="btn primary" id="confirmImport">Respaldar e importar</button></div>`);$('#confirmImport').onclick=async()=>{const button=$('#confirmImport');button.disabled=true;try{if(corruptState){downloadRecovery();}else if(!await exportData())throw new Error('Guardá un respaldo local válido antes de importar.');const old=clone(state),oldImages={...images};if(candidate.state.photos.length&&!db)throw new Error('No se puede importar fotos: IndexedDB está bloqueado.');if(db)await photoTransaction(store=>{store.clear();Object.entries(candidate.images).forEach(([id,data])=>store.put(data,id));});if(!commit(candidate.state,true)){if(db)await photoTransaction(store=>{store.clear();Object.entries(oldImages).forEach(([id,data])=>store.put(data,id));});state=old;throw new Error('No se importó: no hay espacio para los datos. Se restauraron las fotos anteriores.');}images=candidate.images;decoded.clear();closeModal();setTheme();refresh();toast('Todos sus recuerdos fueron importados ♥');}catch(error){toast(error.message);button.disabled=false;}};}catch(error){toast('No se importó: '+error.message);}};
-// Inicialización. No se cargan ejemplos ni datos de prueba en el sitio publicado.
-(async()=>{try{const raw=localStorage.getItem(KEY);if(raw){preservedRaw=raw;const saved=JSON.parse(raw);if(saved.version!==1)throw new Error('Versión desconocida');state=validatePackage({app:'nosotros-web',version:1,state:saved,images:{}},true).state;preservedRaw=null;}}catch(e){corruptState=true;state=EMPTY();storageError('No pudimos abrir los datos guardados. Están protegidos contra escritura. Recuperalos desde Ajustes.');}
-try{await openDB();images=await allPhotos();}catch(e){storageError('El navegador no habilitó el almacenamiento de fotos. Los planes pueden seguir guardándose.');}
-loading=false;setTheme();renderHome();if(state.photos.some(p=>!images[p.id]))storageError('Algunas fotos no están disponibles. Importá un respaldo completo para recuperarlas.');})();
+// La inicialización y persistencia compartida se realizan en sync.js.
 </script>
+<script src="/sync.js"></script>
 </body>
 </html>

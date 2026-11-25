@@ -1,0 +1,6 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Android 9: Go's clipboard probe SIGSYS-es on Termux's faccessat2.
+# Narrow PATH for THIS CLI only; the native Android VPN is never modified.
+set -eu
+BASE="$HOME/nosotros-private/tailscale"
+exec env PATH=/system/bin "$BASE/bin/tailscale" --socket="$BASE/tailscaled.sock" "$@"

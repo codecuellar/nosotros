@@ -1,53 +1,79 @@
-# Nuestro rincón ♥
+# Nuestro rincón · Agus & Mi amor
 
-Una web para guardar planes, ideas y recuerdos de a dos. Un único `index.html`, sin instalaciones, cuentas, fuentes externas ni dependencias. Funciona desde GitHub Pages y abriendo el archivo en un navegador moderno.
+Web privada de pareja: calendario, ideas, Polaroids y collages A4. Conserva el diseño romántico original y los temas estacionales. **Ahora necesita el servidor Python: GitHub Pages no ejecuta la API.** No hay servicios externos para datos, registro público ni dependencias Python de terceros.
 
-## Personalizar CONFIG
+## Instalación actual
 
-Abrí `index.html` con un editor de texto. El primer `<script>`, antes de los estilos, contiene `const CONFIG`:
+- Moto G6 Plus / Termux, Python 3.14, SQLite; servidor en `~/nosotros`.
+- Escucha sólo `127.0.0.1:8787`, detrás de HTTPS Tailscale, sin abrir puertos del router.
+- Base, fotos, copias y estado de Tailscale fuera del repo: `~/nosotros-private/`.
+- Cuentas `agus` y `amor`, creadas desde terminal, contraseñas sólo como hashes scrypt. El archivo de accesos se entrega privadamente; no se publica.
+- Respaldo antiguo importado: **2 actividades, 1 idea y 2 fotos**. Segunda importación no duplica. El JSON original permanece intacto y fuera de GitHub.
+- Activación HTTPS pendiente de autorizar el nuevo nodo `nosotros-moto` en la cuenta de su dueño. No se inventa una URL antes de que Tailscale la asigne.
 
-- `nombres`: los dos nombres. El valor inicial es `['Agus', 'Mi amor']`; cambialo por los suyos.
-- `bienvenida`: mensaje de entrada. La animación dura entre 5 y 6 segundos y se salta con un toque.
-- `tema`: `'auto'`, `'fiestas'` o `'romantico'`. En automático `mesesFiestas: [11,12,1]` activa Navidad/Año Nuevo de noviembre a enero.
-- `feriados`: `{fecha:'MM-DD', nombre:'…'}` para fechas anuales y `{fecha:'YYYY-MM-DD', nombre:'…'}` para fechas exactas. Agregá los puentes y traslados oficiales de cada año. Carnaval y Viernes Santo se calculan; los trasladables no confirmados aparecen como **revisar traslado**, no como una fecha oficial inventada.
-- `maxFotoPx` y `calidadFoto`: límite y compresión JPEG de las fotos (1200 px y 0.83 por defecto).
+**Guía completa:** [README-SERVIDOR.md](README-SERVIDOR.md): instalación, usuarios, importación, inicio, logs, backups y comandos Serve/Funnel en 443.
 
-Los ajustes de tema elegidos desde la app tienen prioridad sobre CONFIG. Para volver al comportamiento del archivo, seleccioná **Según CONFIG / temporada** en Ajustes.
+## CONFIG
 
-## Usar y respaldar
+Editar el objeto `CONFIG` al comienzo de `index.html`:
 
-- Calendario: navegación mensual sin un límite de año impuesto, encuentros, notas y actividades con categoría, hora y estado. Reemplazar conserva el plan anterior como cancelado; eliminar pide confirmación.
-- Planes: seis categorías, enlace opcional, editar/eliminar/completar y asignar al calendario. Completar una idea y completar su actividad son acciones independientes.
-- Fotos: carga múltiple, reducción local a 1200 px, marcos Polaroid y leyendas editables. HEIC depende de si el navegador puede decodificarlo; JPG/PNG/WebP son las opciones más compatibles.
-- Collage: cinco plantillas (máximo 4 o 5 fotos), selección desde galería o carga nueva, encuadre horizontal/vertical y zoom. Cada plantilla conserva su distribución. Imprimir/Guardar PDF usa una hoja A4 limpia; PNG usa 2480 × 3508 px. Los marcos vacíos se imprimen como ilustraciones, no como botones.
-- Ajustes: **Exportar datos completos (.json)** incluye fotos, planes, notas y collages. Pasen ese archivo al otro celular y usen **Importar copia**. Importar reemplaza, no fusiona; primero descarga una copia de los datos locales. Verificá que el navegador haya guardado esa copia antes de seguir. Límite de importación: 100 MB.
-
-**No hay sincronización automática, servidor, autenticación ni cifrado.** Los planes se guardan en localStorage y las imágenes en IndexedDB del navegador. No se suben a GitHub. Si borrás los datos del sitio, cambiás de navegador/dispositivo o usás modo privado podés perderlos: exportá seguido. GitHub Pages y el código son públicos; cualquiera con acceso al perfil del navegador puede abrir los recuerdos locales. No pongas claves o información sensible en CONFIG.
-
-Las fotos y los datos del dominio local y del dominio de GitHub Pages son almacenamientos distintos. Para mudarlos, usá exportar/importar. Los respaldos tienen información privada: no los subas al repositorio.
-
-## Publicación
-
-Repositorio creado y código subido a `main`: https://github.com/codecuellar/nosotros
-
-**GitHub Pages quedó pendiente de activación:** la API de GitHub devolvió HTTP 500 al habilitarlo. Para terminarlo, entrá con tu cuenta en https://github.com/codecuellar/nosotros/settings/pages y elegí **Deploy from a branch → main → / (root) → Save**.
-
-Una vez desplegado, la dirección será https://codecuellar.github.io/nosotros/ (no se presenta como activa hasta que GitHub complete la publicación).
-
-Alternativa con GitHub CLI instalado y autenticado:
-
-```bash
-gh api --method POST repos/codecuellar/nosotros/pages -f 'source[branch]=main' -f 'source[path]=/'
+```js
+nombres: ['Agus', 'Mi amor'],
+bienvenida: 'Hay lugares que no son lugares. Son personas. Y el mío sos vos.',
+bienvenidaMs: 5500,
+tema: 'auto',
+mesesFiestas: [11, 12, 1],
+maxFotoPx: 1200,
+calidadFoto: 0.85,
 ```
 
-Para futuras modificaciones, desde esta carpeta:
+`feriados` admite fechas `MM-DD` anuales o `AAAA-MM-DD` exactas. Confirmar traslados y puentes cada año. El selector de tema también se comparte como dato de la pareja. Los nombres se configuran en el código; no son los usuarios de login.
+
+## Datos y modo sin conexión
+
+IndexedDB conserva datos, fotos redimensionadas y una cola durable. Al reconectar, al abrir y cada cuatro segundos se envían pendientes y se consultan cambios desde el último cursor. IDs estables + `updated_at` por registro; gana el más reciente. Los borrados conservan `deleted_at`, evitando que reaparezcan por reintentos antiguos.
+
+Fotos JPEG/PNG verificadas en el servidor, máximo **3 MB por foto** después del redimensionado. Todas las rutas de datos y fotos exigen una sesión válida; cookies HttpOnly + Secure + SameSite=Lax, duración 90 días, bloqueo de login tras intentos fallidos. Las fotos offline viven en IndexedDB, no en el caché público del service worker.
+
+PWA: abrir una vez con conexión y login; en Safari usar Compartir → Añadir a pantalla de inicio. **iOS no garantiza sincronización con la aplicación cerrada**; se retoma al abrirla. Con servidor caído puede usarse la copia local de una sesión previamente iniciada. Cerrar sesión revoca el token y borra esa copia; no salir con pendientes sin exportarlos primero. Proteger el celular con código: los datos offline no están cifrados en el navegador.
+
+Ajustes permite exportar/importar JSON y migrar localStorage antiguo del **mismo origen**. Importar incorpora IDs faltantes sin duplicar ni borrar recuerdos actuales. GitHub Pages y el dominio privado tienen almacenamientos distintos: para pasar datos del primero al segundo se usa el JSON, no es posible leer automáticamente almacenamiento de otro dominio. El respaldo de esta instalación ya se migró desde terminal.
+
+## Inicio y mantenimiento
+
+En el Moto:
 
 ```bash
-git add index.html README.md
-git commit -m "Actualizar nuestro rincon"
-git push origin main
+cd ~/nosotros
+bash server-ops/start.sh start
+bash server-ops/start.sh status
+# Sólo nuestra app, sin detener las demás:
+bash server-ops/start.sh stop
 ```
 
-No recrees el repositorio ni uses `push --force`.
+Termux:Boot tiene una entrada independiente y tmux supervisa la app cada cinco segundos. Respaldos diarios de SQLite + fotos, conserva los últimos siete. No se reinicia el teléfono para probar Boot porque aloja otras apps. Android aún puede suspender Termux: excluirlo del ahorro de batería y mantener el teléfono conectado.
 
-`referencia/` contiene copias intactas de los originales y está excluida por `.gitignore`. `.verificacion/` contiene evidencia local de pruebas y tampoco se publica. No se modificaron los archivos originales del directorio padre.
+Logs y copia desde la PC:
+
+```bash
+ssh moto 'tail -n 100 -f ~/logs/nosotros.log'
+scp -r 'moto:~/nosotros-private/respaldos' './Copias-Nosotros/'
+```
+
+La guía del servidor incluye copia manual, restauración segura y configuración HTTPS. Ni el repositorio ni GitHub contienen la base, fotos, contraseñas, JSON privado o estado de Tailscale.
+
+## Verificación
+
+Backend con datos sintéticos aislados:
+
+```bash
+python -m unittest discover -s server -p 'test_*.py' -v
+```
+
+También se ejercitaron dos sesiones de navegador distintas, evento y foto compartidos, acceso anónimo bloqueado, PWA con servidor de pruebas realmente apagado, cola offline y recuperación automática. Se verificó en el Moto que ambas cuentas leen las dos fotos originales con bytes idénticos al JSON y que cerrar sesión revoca el acceso. Evidencias y herramientas locales se excluyen de Git.
+
+## Archivos y seguridad
+
+`index.html` conserva la presentación; `sync.js` implementa persistencia compartida; `server/` contiene API, administración y copias; `server-ops/` contiene scripts Termux y Tailscale; `manifest.json`, `sw.js` e íconos permiten el arranque offline. La versión anterior está guardada localmente como `respaldo/index-localstorage.html`, fuera del commit. Los originales del directorio padre no se modificaron.
+
+Para instalar desde cero: clonar el repo, seguir la guía de servidor, crear las dos cuentas e iniciar antes de exponer HTTPS. Nunca publicar `data/`, `uploads/`, `.env`, `respaldos/` ni claves de Tailscale. El código es público, los recuerdos no.
