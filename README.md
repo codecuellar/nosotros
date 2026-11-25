@@ -26,20 +26,28 @@ Los ajustes de tema elegidos desde la app tienen prioridad sobre CONFIG. Para vo
 
 Las fotos y los datos del dominio local y del dominio de GitHub Pages son almacenamientos distintos. Para mudarlos, usá exportar/importar. Los respaldos tienen información privada: no los subas al repositorio.
 
-## Publicar
+## Publicación
 
-Repositorio previsto: `https://github.com/codecuellar/nosotros`.
-Sitio previsto: `https://codecuellar.github.io/nosotros/`.
+Repositorio creado y código subido a `main`: https://github.com/codecuellar/nosotros
 
-Con GitHub CLI instalado, desde esta carpeta:
+**GitHub Pages quedó pendiente de activación:** la API de GitHub devolvió HTTP 500 al habilitarlo. Para terminarlo, entrá con tu cuenta en https://github.com/codecuellar/nosotros/settings/pages y elegí **Deploy from a branch → main → / (root) → Save**.
+
+Una vez desplegado, la dirección será https://codecuellar.github.io/nosotros/ (no se presenta como activa hasta que GitHub complete la publicación).
+
+Alternativa con GitHub CLI instalado y autenticado:
 
 ```bash
-gh auth login
-gh repo create codecuellar/nosotros --public --source . --remote origin
-git push -u origin main
 gh api --method POST repos/codecuellar/nosotros/pages -f 'source[branch]=main' -f 'source[path]=/'
 ```
 
-Si el remoto ya está configurado, omití `--remote origin`. Si el repositorio ya existe, no lo recrees: comprobá su contenido antes de hacer push. También podés activar Pages en **Settings → Pages → Deploy from a branch → main / (root)**. Nunca uses `push --force` para reemplazar un repositorio existente.
+Para futuras modificaciones, desde esta carpeta:
+
+```bash
+git add index.html README.md
+git commit -m "Actualizar nuestro rincon"
+git push origin main
+```
+
+No recrees el repositorio ni uses `push --force`.
 
 `referencia/` contiene copias intactas de los originales y está excluida por `.gitignore`. `.verificacion/` contiene evidencia local de pruebas y tampoco se publica. No se modificaron los archivos originales del directorio padre.
