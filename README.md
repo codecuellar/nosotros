@@ -8,7 +8,7 @@ Abrí `index.html` con un editor de texto. El primer `<script>`, antes de los es
 
 - `nombres`: los dos nombres. El valor inicial es `['Cristian', 'Mi amor']`; cambialo por los suyos.
 - `bienvenida`: mensaje de entrada. La animación dura entre 5 y 6 segundos y se salta con un toque.
-- `tema`: `'auto'`, `'fiestas'` o `'romantico'`. En automático `mesesFiestas: [11,12,1]` activa Navidad/Año Nuevo de noviembre a enero.
+- `tema`: `'auto'`, `'fiestas'` o `'romantico'`. En automático `mesesFiestas: [11,12,1]` activa Navidad/Año Nuevo de noviembre a eneroo.
 - `feriados`: `{fecha:'MM-DD', nombre:'…'}` para fechas anuales y `{fecha:'YYYY-MM-DD', nombre:'…'}` para fechas exactas. Agregá los puentes y traslados oficiales de cada año. Carnaval y Viernes Santo se calculan; los trasladables no confirmados aparecen como **revisar traslado**, no como una fecha oficial inventada.
 - `maxFotoPx` y `calidadFoto`: límite y compresión JPEG de las fotos (1200 px y 0.83 por defecto).
 
