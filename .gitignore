@@ -10,3 +10,20 @@ node_modules/
 nuestro-collage-*.png
 .DS_Store
 Thumbs.db
+
+# Privado del servidor: nunca publicar datos ni credenciales
+data/
+uploads/
+.env
+.env.*
+!.env.example
+respaldos/
+respaldo/
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+*.pem
+*.key
+__pycache__/
