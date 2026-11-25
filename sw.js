@@ -2,7 +2,7 @@
 // Only the PUBLIC shell belongs in CacheStorage. Private photos/data are owned
 // by the frontend's IndexedDB flow, never by this service worker.
 const CACHE_PREFIX = 'nosotros-shell-';
-const CACHE = `${CACHE_PREFIX}v2`;
+const CACHE = `${CACHE_PREFIX}v3`;
 const SHELL = ['/', '/index.html', '/sync.js', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 const ALLOWED = new Set(SHELL);
 const cacheable = response => response.status === 200 && response.type !== 'opaque' && !response.redirected;

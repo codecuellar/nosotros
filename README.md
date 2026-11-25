@@ -1,3 +1,5 @@
+> **Modo actual: sin login, por Wi-Fi y Tailscale, a pedido del dueño.** Todos los dispositivos con acceso pueden leer y modificar datos/fotos. No habilitar Funnel ni acceso público. Las cuentas y hashes anteriores se conservan en SQLite, pero ya no se utilizan para entrar. La información de autenticación de la versión anterior que aparece debajo es histórica.
+
 # Nuestro rincón · Agus & Mi amor
 
 Web privada de pareja: calendario, ideas, Polaroids y collages A4. Conserva el diseño romántico original y los temas estacionales. **Ahora necesita el servidor Python: GitHub Pages no ejecuta la API.** No hay servicios externos para datos, registro público ni dependencias Python de terceros.

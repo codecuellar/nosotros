@@ -531,16 +531,7 @@ class Handler(BaseHTTPRequestHandler):
         store = self.server.store
         if path == '/api/health' and method in ('GET', 'HEAD'):
             return self.respond(200, {'ok': True})
-        if path == '/api/login' and method == 'POST':
-            body = self.read_json(8192)
-            self.csrf()
-            token, username = store.login(body.get('username'), body.get('password'), self.client_address[0])
-            return self.respond(200, {'username': username}, headers={'Set-Cookie': self.session_cookie(token, SESSION_SECONDS)})
         if path.startswith('/api/') or path.startswith('/uploads/'):
-            token = self.token()
-            username = store.session(token)
-            if not username:
-                raise APIError('Sesión requerida', 401)
             body = None
             if method not in ('GET', 'HEAD'):
                 # Consume bounded recognized request bodies before CSRF rejection. This
@@ -551,10 +542,7 @@ class Handler(BaseHTTPRequestHandler):
                     body = self.read_json(MAX_ENCODED + 1024)
                 self.csrf()
             if path == '/api/session' and method in ('GET', 'HEAD'):
-                return self.respond(200, {'username': username})
-            if path == '/api/logout' and method == 'POST':
-                store.logout(token)
-                return self.respond(200, {'ok': True}, headers={'Set-Cookie': self.session_cookie('', 0)})
+                return self.respond(200, {'username': 'Compartido', 'authentication': False})
             if path == '/api/sync':
                 if method == 'GET':
                     query = parse_qs(urlsplit(self.path).query)
