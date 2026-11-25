@@ -42,7 +42,7 @@ async function request(route, mode = 'cors', method = 'GET') {
   assert.equal((await request('/', 'navigate')).status, 401);
   assert.equal(writes.length, before);
   response = new Response('failure', {status: 503});
-  assert.equal((await request('/', 'navigate')).status, 503);
+  assert.equal(await (await request('/', 'navigate')).text(), 'shell');
   assert.equal(writes.length, before);
   offline = true;
   assert.equal(await (await request('/', 'navigate')).text(), 'shell');
