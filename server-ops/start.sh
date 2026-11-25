@@ -2,7 +2,7 @@
 set -eu
 ROOT="$(cd -- "$(dirname -- "$0")/.." && pwd)"
 export ROOT
-export NOSOTROS_PORT=8787 NOSOTROS_HOST=127.0.0.1
+export NOSOTROS_PORT=8787 NOSOTROS_HOST=0.0.0.0
 export NOSOTROS_DATA="$HOME/nosotros-private/data"
 export NOSOTROS_UPLOADS="$HOME/nosotros-private/uploads"
 export NOSOTROS_BACKUPS="$HOME/nosotros-private/respaldos"

@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 import re
 import secrets
+import ssl
 import sqlite3
 import struct
 import tarfile
@@ -29,7 +30,7 @@ ROOT = Path(__file__).resolve().parent.parent
 TABLES = {'events': 'activities', 'ideas': 'list_items', 'photos': 'photos',
           'collages': 'collages', 'days': 'days', 'notes': 'notes', 'settings': 'settings'}
 ID = re.compile(r'[A-Za-z0-9_.:-]{1,100}\Z')
-COOKIE = '__Host-nosotros'
+COOKIE = 'nosotros_session'
 SESSION_SECONDS = 90 * 86400
 MAX_SYNC = 8 * 1024 * 1024
 MAX_PHOTO = 3 * 1024 * 1024
@@ -495,6 +496,14 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.scheme not in ('http', 'https') or parsed.netloc.lower() != host.lower() or parsed.path or parsed.query or parsed.fragment or parsed.username or ',' in host:
             raise APIError('Origin no autorizado', 403)
 
+    def session_cookie(self, value, max_age):
+        # Trust HTTPS forwarding only from the local reverse proxy.
+        local = ipaddress.ip_address(self.client_address[0]).is_loopback
+        https = isinstance(self.connection, ssl.SSLSocket) or (
+            local and self.headers.get('X-Forwarded-Proto', '').lower() == 'https')
+        secure = '; Secure' if https else ''
+        return f'{COOKIE}={value}; HttpOnly{secure}; SameSite=Lax; Path=/; Max-Age={max_age}'
+
     def token(self):
         cookie = http.cookies.SimpleCookie()
         try:
@@ -526,7 +535,7 @@ class Handler(BaseHTTPRequestHandler):
             body = self.read_json(8192)
             self.csrf()
             token, username = store.login(body.get('username'), body.get('password'), self.client_address[0])
-            return self.respond(200, {'username': username}, headers={'Set-Cookie': f'{COOKIE}={token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age={SESSION_SECONDS}'})
+            return self.respond(200, {'username': username}, headers={'Set-Cookie': self.session_cookie(token, SESSION_SECONDS)})
         if path.startswith('/api/') or path.startswith('/uploads/'):
             token = self.token()
             username = store.session(token)
@@ -545,7 +554,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.respond(200, {'username': username})
             if path == '/api/logout' and method == 'POST':
                 store.logout(token)
-                return self.respond(200, {'ok': True}, headers={'Set-Cookie': f'{COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0'})
+                return self.respond(200, {'ok': True}, headers={'Set-Cookie': self.session_cookie('', 0)})
             if path == '/api/sync':
                 if method == 'GET':
                     query = parse_qs(urlsplit(self.path).query)
@@ -632,7 +641,7 @@ def user_main():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--host', default='127.0.0.1')
+    parser.add_argument('--host', default=os.environ.get('NOSOTROS_HOST', '127.0.0.1'))
     parser.add_argument('--port', type=int, default=int(os.environ.get('NOSOTROS_PORT', '8787')))
     storage_arguments(parser)
     args = parser.parse_args()
