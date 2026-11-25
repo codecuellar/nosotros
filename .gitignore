@@ -1,0 +1,12 @@
+# Referencias originales: nunca publicar
+referencia/
+# Evidencia local y herramientas de verificación
+.verificacion/
+.taste-skill/
+node_modules/
+*.log
+# No publicar respaldos personales
+*respaldo*.json
+nuestro-collage-*.png
+.DS_Store
+Thumbs.db
